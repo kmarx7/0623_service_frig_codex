@@ -313,6 +313,23 @@ button:disabled {
   background: #fbfcf5;
 }
 
+.notice {
+  padding: 12px 13px;
+  border: 1px solid #cfe0c8;
+  border-radius: 8px;
+  color: #244229;
+  background: #eef8ea;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.notice.warn {
+  border-color: #f1d28f;
+  color: #80560d;
+  background: #fff7e4;
+}
+
 .result-stack {
   display: grid;
   gap: 12px;

@@ -15,26 +15,10 @@ import {
   X,
 } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
+import { readFileAsDataUrl, recognizeIngredients, recommendRecipes, type Recommendation } from "./lib/api";
+import type { Ingredient, Recipe } from "./types";
 
 type Step = "input" | "review" | "recommendations" | "recipe" | "cook";
-
-type Ingredient = {
-  name: string;
-  confidence?: "high" | "low";
-};
-
-type Recipe = {
-  id: string;
-  title: string;
-  minutes: number;
-  difficulty: "쉬움" | "보통";
-  tool: "프라이팬" | "냄비" | "전자레인지";
-  ingredients: string[];
-  optional: string[];
-  steps: string[];
-  reason: string;
-  substitutes: Record<string, string[]>;
-};
 
 const quickIngredients = [
   "계란",
@@ -165,12 +149,17 @@ export function App() {
   const [typed, setTyped] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [selectedRecipeId, setSelectedRecipeId] = useState("kimchi-tofu");
+  const [aiRecipes, setAiRecipes] = useState<Recommendation[]>([]);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [isRecommending, setIsRecommending] = useState(false);
+  const [notice, setNotice] = useState("");
   const [cookStep, setCookStep] = useState(0);
 
   const ownedNames = ingredients.map((item) => item.name);
-  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
+  const allRecipes = [...aiRecipes.map((item) => item.recipe), ...recipes];
+  const selectedRecipe = allRecipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
 
-  const rankedRecipes = useMemo(() => {
+  const fallbackRecipes = useMemo(() => {
     return [...recipes]
       .map((recipe) => ({
         recipe,
@@ -181,6 +170,7 @@ export function App() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
   }, [ownedNames.join(","), urgent.join(",")]);
+  const displayedRecipes = aiRecipes.length > 0 ? aiRecipes : fallbackRecipes;
 
   function addIngredient(name: string, confidence: Ingredient["confidence"] = "high") {
     const cleanName = name.trim();
@@ -197,17 +187,46 @@ export function App() {
     setUrgent((current) => (current.includes(name) ? current.filter((item) => item !== name) : [...current, name]));
   }
 
-  function handleImage(event: ChangeEvent<HTMLInputElement>) {
+  async function handleImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     setImageUrl(URL.createObjectURL(file));
-    setIngredients(mockDetected);
+    setIsRecognizing(true);
+    setNotice("");
     setStep("review");
+    try {
+      const imageDataUrl = await readFileAsDataUrl(file);
+      const detected = await recognizeIngredients(imageDataUrl);
+      setIngredients(detected.length > 0 ? detected : mockDetected);
+      if (detected.length === 0) {
+        setNotice("사진에서 재료를 찾지 못해 예시 재료를 넣었어요. 직접 수정해 주세요.");
+      }
+    } catch {
+      setIngredients(mockDetected);
+      setNotice("AI 인식에 실패해 예시 재료를 넣었어요. 직접 수정한 뒤 추천받을 수 있습니다.");
+    } finally {
+      setIsRecognizing(false);
+    }
   }
 
   function addTyped() {
     addIngredient(typed);
     setTyped("");
+  }
+
+  async function handleRecommend() {
+    setIsRecommending(true);
+    setNotice("");
+    try {
+      const recommendations = await recommendRecipes(ownedNames, urgent);
+      setAiRecipes(recommendations);
+    } catch {
+      setAiRecipes([]);
+      setNotice("AI 추천에 실패해 기본 레시피 매칭으로 보여드려요.");
+    } finally {
+      setIsRecommending(false);
+      setStep("recommendations");
+    }
   }
 
   return (
@@ -291,6 +310,9 @@ export function App() {
             </div>
           )}
 
+          {isRecognizing && <div className="notice">사진 속 재료를 인식하고 있어요.</div>}
+          {notice && <div className="notice warn">{notice}</div>}
+
           <div className="ingredient-list">
             {ingredients.map((item) => (
               <button key={item.name} className={`ingredient-pill ${item.confidence === "low" ? "needs-check" : ""}`} onClick={() => removeIngredient(item.name)}>
@@ -333,9 +355,9 @@ export function App() {
             </div>
           </div>
 
-          <button className="primary-action sticky-action" onClick={() => setStep("recommendations")}>
+          <button className="primary-action sticky-action" disabled={isRecognizing || ingredients.length === 0 || isRecommending} onClick={handleRecommend}>
             <Utensils size={19} />
-            메뉴 3개 추천받기
+            {isRecommending ? "AI가 메뉴 추천 중" : "메뉴 3개 추천받기"}
           </button>
         </section>
       )}
@@ -343,9 +365,10 @@ export function App() {
       {step === "recommendations" && (
         <section className="screen">
           <ScreenHeading title="지금 만들기 좋은 메뉴예요" description="부족 재료가 적고, 먼저 써야 할 재료가 포함된 순서로 정렬했습니다." />
+          {notice && <div className="notice warn">{notice}</div>}
 
           <div className="result-stack">
-            {rankedRecipes.map(({ recipe, missing, urgentHits }, index) => (
+            {displayedRecipes.map(({ recipe, missing, urgentHits }, index) => (
               <article className="recipe-card" key={recipe.id}>
                 <div className="card-rank">{index + 1}</div>
                 <div className="card-content">
