@@ -16,6 +16,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button,
@@ -35,6 +36,7 @@ button:disabled {
 .app-shell {
   width: min(100%, 480px);
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   background: #fffdf7;
   box-shadow: 0 24px 80px rgba(25, 40, 27, 0.14);
@@ -44,7 +46,7 @@ button:disabled {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 18px 18px 10px;
+  padding: calc(18px + env(safe-area-inset-top)) 18px 10px;
 }
 
 .topbar h1,
@@ -81,7 +83,8 @@ button:disabled {
   flex-direction: column;
   gap: 18px;
   min-height: calc(100vh - 70px);
-  padding: 14px 18px 24px;
+  min-height: calc(100dvh - 70px);
+  padding: 14px 18px calc(24px + env(safe-area-inset-bottom));
 }
 
 .hero-copy {
@@ -527,9 +530,10 @@ button:disabled {
 .cook-screen {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   flex-direction: column;
   gap: 22px;
-  padding: 22px 18px;
+  padding: calc(22px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom));
   color: #ffffff;
   background: #1f2d21;
 }
@@ -605,6 +609,110 @@ button:disabled {
 .control-button.next {
   background: #f6bd60;
   color: #1f2d21;
+}
+
+@media (max-width: 480px) {
+  body {
+    background: #fffdf7;
+  }
+
+  .app-shell {
+    width: 100%;
+    box-shadow: none;
+  }
+
+  .topbar {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .screen,
+  .input-screen {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .hero-copy h2,
+  .screen-heading h2,
+  .recipe-detail-head h2 {
+    font-size: 26px;
+  }
+
+  .segmented-control button,
+  .primary-action,
+  .secondary-action,
+  .control-button,
+  .photo-action,
+  .icon-button,
+  .small-action {
+    touch-action: manipulation;
+  }
+
+  .segmented-control button {
+    min-height: 46px;
+  }
+
+  .photo-action {
+    min-height: 164px;
+    padding: 18px 16px;
+  }
+
+  .manual-entry {
+    grid-template-columns: minmax(0, 1fr) 46px;
+  }
+
+  .input-wrap {
+    height: 48px;
+  }
+
+  .chip,
+  .ingredient-pill {
+    min-height: 38px;
+  }
+
+  .primary-action {
+    min-height: 56px;
+  }
+
+  .recipe-card {
+    grid-template-columns: 30px 1fr;
+    padding: 12px;
+  }
+
+  .card-title-row {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .card-title-row h3 {
+    font-size: 18px;
+  }
+
+  .status {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .hero-copy h2,
+  .screen-heading h2,
+  .recipe-detail-head h2 {
+    font-size: 24px;
+  }
+
+  .segmented-control button {
+    gap: 5px;
+    font-size: 13px;
+  }
+
+  .photo-action small {
+    font-size: 12px;
+  }
+
+  .card-title-row {
+    display: grid;
+    justify-content: stretch;
+  }
 }
 
 @media (min-width: 760px) {
