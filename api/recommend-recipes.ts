@@ -1,9 +1,5 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 const recipeSchema = {
   type: "object",
   additionalProperties: false,
@@ -76,6 +72,10 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     const response = await client.responses.create({
       model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
       input: [
