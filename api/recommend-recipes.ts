@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAIClient } from "./openai";
 
 const recipeSchema = {
   type: "object",
@@ -62,7 +62,9 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  const client = getOpenAIClient();
+
+  if (!client) {
     return res.status(500).json({ error: "OPENAI_API_KEY is not configured" });
   }
 
@@ -72,10 +74,6 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
     const response = await client.responses.create({
       model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
       input: [
