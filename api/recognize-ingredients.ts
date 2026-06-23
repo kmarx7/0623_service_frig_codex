@@ -77,6 +77,11 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json(JSON.parse(response.output_text));
   } catch (error) {
+    if (typeof error === "object" && error !== null && "status" in error && error.status === 400) {
+      console.warn(error);
+      return res.status(200).json({ ingredients: [] });
+    }
+
     console.error(error);
     return res.status(500).json({ error: "Failed to recognize ingredients" });
   }
