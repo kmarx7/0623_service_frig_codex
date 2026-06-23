@@ -248,14 +248,25 @@ export function App() {
             <p>사진을 올리거나 재료를 몇 개 선택하면 15분 이내 메뉴 3가지를 추천합니다.</p>
           </div>
 
-          <label className="upload-panel">
-            <input type="file" accept="image/*" onChange={handleImage} />
-            <span className="upload-icon">
-              <ImageUp size={30} />
-            </span>
-            <strong>냉장고 사진 올리기</strong>
-            <small>AI 인식 결과는 다음 화면에서 수정할 수 있어요.</small>
-          </label>
+          <div className="capture-actions">
+            <label className="capture-card primary">
+              <input type="file" accept="image/*" capture="environment" onChange={handleImage} />
+              <span className="upload-icon">
+                <Camera size={30} />
+              </span>
+              <strong>냉장고 사진 찍기</strong>
+              <small>휴대폰 카메라로 바로 촬영해서 재료를 인식합니다.</small>
+            </label>
+
+            <label className="capture-card">
+              <input type="file" accept="image/*" onChange={handleImage} />
+              <span className="upload-icon secondary">
+                <ImageUp size={27} />
+              </span>
+              <strong>사진 업로드</strong>
+              <small>이미 찍어둔 냉장고나 재료 사진을 선택하세요.</small>
+            </label>
+          </div>
 
           <div className="manual-entry">
             <div className="input-wrap">

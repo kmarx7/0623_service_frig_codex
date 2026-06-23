@@ -107,30 +107,44 @@ button:disabled {
   line-height: 1.55;
 }
 
-.upload-panel {
+.capture-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.capture-card {
   display: grid;
   min-height: 178px;
   place-items: center;
+  align-content: center;
   gap: 8px;
-  padding: 22px;
-  border: 1.5px dashed #a8bea0;
+  padding: 18px 14px;
+  border: 1px solid #dce7d6;
   border-radius: 8px;
   color: #243324;
-  background: linear-gradient(180deg, #f2f8eb 0%, #fffdf7 100%);
+  background: #ffffff;
   text-align: center;
 }
 
-.upload-panel input {
+.capture-card.primary {
+  border: 1.5px solid #a8bea0;
+  background: linear-gradient(180deg, #f2f8eb 0%, #fffdf7 100%);
+}
+
+.capture-card input {
   display: none;
 }
 
-.upload-panel strong {
-  font-size: 18px;
+.capture-card strong {
+  font-size: 17px;
+  line-height: 1.25;
 }
 
-.upload-panel small {
-  max-width: 260px;
+.capture-card small {
+  max-width: 170px;
   color: #65715f;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -142,6 +156,11 @@ button:disabled {
   border-radius: 8px;
   color: #ffffff;
   background: #2f7d4a;
+}
+
+.upload-icon.secondary {
+  color: #2f7d4a;
+  background: #eef8ea;
 }
 
 .manual-entry {
