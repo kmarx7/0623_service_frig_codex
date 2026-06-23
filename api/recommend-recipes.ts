@@ -41,11 +41,20 @@ const recipeSchema = {
           },
           reason: { type: "string" },
           substitutes: {
-            type: "object",
-            additionalProperties: {
-              type: "array",
-              maxItems: 3,
-              items: { type: "string" },
+            type: "array",
+            maxItems: 4,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                ingredient: { type: "string" },
+                alternatives: {
+                  type: "array",
+                  maxItems: 3,
+                  items: { type: "string" },
+                },
+              },
+              required: ["ingredient", "alternatives"],
             },
           },
         },

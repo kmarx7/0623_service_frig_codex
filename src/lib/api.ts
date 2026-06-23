@@ -35,14 +35,28 @@ export async function recognizeIngredients(imageDataUrl: string): Promise<Ingred
 }
 
 export async function recommendRecipes(ingredients: string[], urgent: string[]): Promise<Recommendation[]> {
-  const data = await requestJson<{ recipes: Array<Recipe & { missing: string[] }> }>("/api/recommend-recipes", {
+  const data = await requestJson<{
+    recipes: Array<
+      Omit<Recipe, "substitutes"> & {
+        missing: string[];
+        substitutes: Array<{ ingredient: string; alternatives: string[] }>;
+      }
+    >;
+  }>("/api/recommend-recipes", {
     ingredients,
     urgent,
   });
 
-  return data.recipes.map((recipe) => ({
-    recipe,
-    missing: recipe.missing,
-    urgentHits: recipe.ingredients.filter((item) => urgent.includes(item)),
-  }));
+  return data.recipes.map((recipe) => {
+    const substitutes = Object.fromEntries(recipe.substitutes.map((item) => [item.ingredient, item.alternatives]));
+
+    return {
+      recipe: {
+        ...recipe,
+        substitutes,
+      },
+      missing: recipe.missing,
+      urgentHits: recipe.ingredients.filter((item) => urgent.includes(item)),
+    };
+  });
 }
