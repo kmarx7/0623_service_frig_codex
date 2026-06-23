@@ -14,11 +14,12 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { readFileAsDataUrl, recognizeIngredients, recommendRecipes, type Recommendation } from "./lib/api";
 import type { Ingredient, Recipe } from "./types";
 
 type Step = "input" | "review" | "recommendations" | "recipe" | "cook";
+type PhotoMode = "camera" | "upload";
 
 const quickIngredients = [
   "계란",
@@ -150,10 +151,13 @@ export function App() {
   const [imageUrl, setImageUrl] = useState("");
   const [selectedRecipeId, setSelectedRecipeId] = useState("kimchi-tofu");
   const [aiRecipes, setAiRecipes] = useState<Recommendation[]>([]);
+  const [photoMode, setPhotoMode] = useState<PhotoMode>("camera");
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [isRecommending, setIsRecommending] = useState(false);
   const [notice, setNotice] = useState("");
   const [cookStep, setCookStep] = useState(0);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const ownedNames = ingredients.map((item) => item.name);
   const allRecipes = [...aiRecipes.map((item) => item.recipe), ...recipes];
@@ -187,6 +191,15 @@ export function App() {
     setUrgent((current) => (current.includes(name) ? current.filter((item) => item !== name) : [...current, name]));
   }
 
+  function openSelectedPhotoInput() {
+    if (photoMode === "camera") {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    uploadInputRef.current?.click();
+  }
+
   async function handleImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -206,6 +219,7 @@ export function App() {
       setNotice("AI 인식에 실패해 예시 재료를 넣었어요. 직접 수정한 뒤 추천받을 수 있습니다.");
     } finally {
       setIsRecognizing(false);
+      event.target.value = "";
     }
   }
 
@@ -248,24 +262,26 @@ export function App() {
             <p>사진을 올리거나 재료를 몇 개 선택하면 15분 이내 메뉴 3가지를 추천합니다.</p>
           </div>
 
-          <div className="capture-actions">
-            <label className="capture-card primary">
-              <input type="file" accept="image/*" capture="environment" onChange={handleImage} />
-              <span className="upload-icon">
-                <Camera size={30} />
-              </span>
-              <strong>냉장고 사진 찍기</strong>
-              <small>휴대폰 카메라로 바로 촬영해서 재료를 인식합니다.</small>
-            </label>
+          <div className="photo-picker">
+            <div className="segmented-control" role="tablist" aria-label="사진 입력 방식">
+              <button type="button" className={photoMode === "camera" ? "active" : ""} onClick={() => setPhotoMode("camera")}>
+                <Camera size={17} />
+                사진 찍기
+              </button>
+              <button type="button" className={photoMode === "upload" ? "active" : ""} onClick={() => setPhotoMode("upload")}>
+                <ImageUp size={17} />
+                이미지 업로드
+              </button>
+            </div>
 
-            <label className="capture-card">
-              <input type="file" accept="image/*" onChange={handleImage} />
-              <span className="upload-icon secondary">
-                <ImageUp size={27} />
-              </span>
-              <strong>사진 업로드</strong>
-              <small>이미 찍어둔 냉장고나 재료 사진을 선택하세요.</small>
-            </label>
+            <input ref={cameraInputRef} className="hidden-file-input" type="file" accept="image/*" capture="environment" onChange={handleImage} />
+            <input ref={uploadInputRef} className="hidden-file-input" type="file" accept="image/*" onChange={handleImage} />
+
+            <button type="button" className="photo-action" onClick={openSelectedPhotoInput}>
+              <span className={`upload-icon ${photoMode === "upload" ? "secondary" : ""}`}>{photoMode === "camera" ? <Camera size={30} /> : <ImageUp size={27} />}</span>
+              <strong>{photoMode === "camera" ? "냉장고 사진 찍기" : "이미지 선택하기"}</strong>
+              <small>{photoMode === "camera" ? "휴대폰 카메라로 바로 촬영해서 재료를 인식합니다." : "이미 찍어둔 냉장고나 재료 사진을 업로드합니다."}</small>
+            </button>
           </div>
 
           <div className="manual-entry">

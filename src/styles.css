@@ -107,45 +107,69 @@ button:disabled {
   line-height: 1.55;
 }
 
-.capture-actions {
+.photo-picker {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
-.capture-card {
+.segmented-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #edf3e8;
+}
+
+.segmented-control button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 6px;
+  color: #5c6758;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.segmented-control button.active {
+  color: #203221;
+  background: #ffffff;
+  box-shadow: 0 1px 8px rgba(34, 48, 34, 0.12);
+}
+
+.photo-action {
   display: grid;
   min-height: 178px;
   place-items: center;
   align-content: center;
   gap: 8px;
-  padding: 18px 14px;
-  border: 1px solid #dce7d6;
+  padding: 20px 18px;
+  border: 1.5px dashed #a8bea0;
   border-radius: 8px;
   color: #243324;
-  background: #ffffff;
+  background: linear-gradient(180deg, #f2f8eb 0%, #fffdf7 100%);
   text-align: center;
 }
 
-.capture-card.primary {
-  border: 1.5px solid #a8bea0;
-  background: linear-gradient(180deg, #f2f8eb 0%, #fffdf7 100%);
-}
-
-.capture-card input {
-  display: none;
-}
-
-.capture-card strong {
-  font-size: 17px;
+.photo-action strong {
+  font-size: 18px;
   line-height: 1.25;
 }
 
-.capture-card small {
-  max-width: 170px;
+.photo-action small {
+  max-width: 260px;
   color: #65715f;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
+}
+
+.hidden-file-input {
+  display: none;
 }
 
 .upload-icon {
