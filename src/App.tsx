@@ -4,14 +4,17 @@ import {
   Check,
   ChefHat,
   Clock3,
+  History,
   Flame,
   ImageUp,
   Minus,
   Plus,
+  ShoppingCart,
   Search,
   Sparkles,
   Timer,
   Utensils,
+  Wand2,
   X,
 } from "lucide-react";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
@@ -20,6 +23,9 @@ import type { Ingredient, Recipe } from "./types";
 
 type Step = "input" | "review" | "recommendations" | "recipe" | "cook";
 type PhotoMode = "camera" | "upload";
+type RecipeSubstitutions = Record<string, Record<string, string>>;
+
+const RECENT_INGREDIENTS_KEY = "fridge-menu:recent-ingredients";
 
 const quickIngredients = [
   "계란",
@@ -143,6 +149,41 @@ function scoreRecipe(recipe: Recipe, owned: string[], urgent: string[]) {
   return urgentHits.length * 12 + (recipe.ingredients.length - missing.length) * 4 - missing.length * 8 - recipe.minutes / 5;
 }
 
+function loadRecentIngredients(): Ingredient[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const saved = window.localStorage.getItem(RECENT_INGREDIENTS_KEY);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved) as Ingredient[];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.name).slice(0, 16) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentIngredients(items: Ingredient[]) {
+  if (typeof window === "undefined") return;
+  const unique = Array.from(new Map(items.map((item) => [item.name, { ...item, confidence: "high" as const }])).values()).slice(0, 16);
+  window.localStorage.setItem(RECENT_INGREDIENTS_KEY, JSON.stringify(unique));
+}
+
+function applySubstitutions(recipe: Recipe, replacements: Record<string, string> = {}) {
+  return {
+    ...recipe,
+    ingredients: recipe.ingredients.map((item) => replacements[item] ?? item),
+    steps: recipe.steps.map((step) =>
+      Object.entries(replacements).reduce((text, [from, to]) => text.split(from).join(to), step),
+    ),
+    reason:
+      Object.keys(replacements).length > 0
+        ? `${recipe.reason} 대체 재료 ${Object.entries(replacements)
+            .map(([from, to]) => `${from}→${to}`)
+            .join(", ")}를 반영했어요.`
+        : recipe.reason,
+  };
+}
+
 export function App() {
   const [step, setStep] = useState<Step>("input");
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -151,6 +192,9 @@ export function App() {
   const [imageUrl, setImageUrl] = useState("");
   const [selectedRecipeId, setSelectedRecipeId] = useState("kimchi-tofu");
   const [aiRecipes, setAiRecipes] = useState<Recommendation[]>([]);
+  const [recentIngredients, setRecentIngredients] = useState<Ingredient[]>(loadRecentIngredients);
+  const [recipeSubstitutions, setRecipeSubstitutions] = useState<RecipeSubstitutions>({});
+  const [checkedShoppingItems, setCheckedShoppingItems] = useState<string[]>([]);
   const [photoMode, setPhotoMode] = useState<PhotoMode>("camera");
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [isRecommending, setIsRecommending] = useState(false);
@@ -161,7 +205,8 @@ export function App() {
 
   const ownedNames = ingredients.map((item) => item.name);
   const allRecipes = [...aiRecipes.map((item) => item.recipe), ...recipes];
-  const selectedRecipe = allRecipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
+  const selectedRecipeBase = allRecipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
+  const selectedRecipe = applySubstitutions(selectedRecipeBase, recipeSubstitutions[selectedRecipeBase.id]);
 
   const fallbackRecipes = useMemo(() => {
     return [...recipes]
@@ -175,6 +220,19 @@ export function App() {
       .slice(0, 3);
   }, [ownedNames.join(","), urgent.join(",")]);
   const displayedRecipes = aiRecipes.length > 0 ? aiRecipes : fallbackRecipes;
+  const adjustedRecipes = displayedRecipes.map((item) => {
+    const replacements = recipeSubstitutions[item.recipe.id] ?? {};
+    const adjustedRecipe = applySubstitutions(item.recipe, replacements);
+    const adjustedMissing = item.missing.filter((missingItem) => !replacements[missingItem]);
+
+    return {
+      ...item,
+      recipe: adjustedRecipe,
+      missing: adjustedMissing,
+      appliedSubstitutions: replacements,
+    };
+  });
+  const shoppingItems = Array.from(new Set(adjustedRecipes.flatMap((item) => item.missing))).filter(Boolean);
 
   function addIngredient(name: string, confidence: Ingredient["confidence"] = "high") {
     const cleanName = name.trim();
@@ -182,9 +240,20 @@ export function App() {
     setIngredients((current) => [...current, { name: cleanName, confidence }]);
   }
 
+  function replaceIngredients(nextIngredients: Ingredient[]) {
+    setIngredients(nextIngredients);
+    setUrgent((current) => current.filter((item) => nextIngredients.some((ingredient) => ingredient.name === item)));
+    setAiRecipes([]);
+    setRecipeSubstitutions({});
+    setCheckedShoppingItems([]);
+  }
+
   function removeIngredient(name: string) {
     setIngredients((current) => current.filter((item) => item.name !== name));
     setUrgent((current) => current.filter((item) => item !== name));
+    setAiRecipes([]);
+    setRecipeSubstitutions({});
+    setCheckedShoppingItems([]);
   }
 
   function toggleUrgent(name: string) {
@@ -228,9 +297,36 @@ export function App() {
     setTyped("");
   }
 
+  function loadRecent() {
+    if (recentIngredients.length === 0) return;
+    replaceIngredients(recentIngredients);
+    setNotice("최근 저장한 재료를 불러왔어요.");
+    setStep("review");
+  }
+
+  function applySubstitute(recipeId: string, missingItem: string, substitute: string) {
+    setRecipeSubstitutions((current) => ({
+      ...current,
+      [recipeId]: {
+        ...(current[recipeId] ?? {}),
+        [missingItem]: substitute,
+      },
+    }));
+
+    setCheckedShoppingItems((current) => current.filter((item) => item !== missingItem));
+  }
+
+  function toggleShoppingItem(item: string) {
+    setCheckedShoppingItems((current) => (current.includes(item) ? current.filter((name) => name !== item) : [...current, item]));
+  }
+
   async function handleRecommend() {
     setIsRecommending(true);
     setNotice("");
+    saveRecentIngredients(ingredients);
+    setRecentIngredients(loadRecentIngredients());
+    setRecipeSubstitutions({});
+    setCheckedShoppingItems([]);
     try {
       const recommendations = await recommendRecipes(ownedNames, urgent);
       setAiRecipes(recommendations);
@@ -283,6 +379,21 @@ export function App() {
               <small>{photoMode === "camera" ? "휴대폰 카메라로 바로 촬영해서 재료를 인식합니다." : "이미 찍어둔 냉장고나 재료 사진을 업로드합니다."}</small>
             </button>
           </div>
+
+          {recentIngredients.length > 0 && (
+            <div className="recent-box">
+              <div>
+                <strong>
+                  <History size={16} />
+                  최근 재료
+                </strong>
+                <p>{recentIngredients.map((item) => item.name).join(", ")}</p>
+              </div>
+              <button type="button" className="inline-action" onClick={loadRecent}>
+                불러오기
+              </button>
+            </div>
+          )}
 
           <div className="manual-entry">
             <div className="input-wrap">
@@ -394,8 +505,25 @@ export function App() {
           <ScreenHeading title="지금 만들기 좋은 메뉴예요" description="부족 재료가 적고, 먼저 써야 할 재료가 포함된 순서로 정렬했습니다." />
           {notice && <div className="notice warn">{notice}</div>}
 
+          {shoppingItems.length > 0 && (
+            <div className="shopping-box">
+              <div className="section-title with-icon">
+                <ShoppingCart size={16} />
+                장보기 리스트
+              </div>
+              <div className="shopping-list">
+                {shoppingItems.map((item) => (
+                  <button key={item} className={`shopping-item ${checkedShoppingItems.includes(item) ? "checked" : ""}`} onClick={() => toggleShoppingItem(item)}>
+                    {checkedShoppingItems.includes(item) && <Check size={14} />}
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="result-stack">
-            {displayedRecipes.map(({ recipe, missing, urgentHits }, index) => (
+            {adjustedRecipes.map(({ recipe, missing, urgentHits, appliedSubstitutions }, index) => (
               <article className="recipe-card" key={recipe.id}>
                 <div className="card-rank">{index + 1}</div>
                 <div className="card-content">
@@ -418,8 +546,28 @@ export function App() {
                     <span>부족: {missing.length ? missing.join(", ") : "없음"}</span>
                   </div>
                   {missing.length > 0 && (
-                    <div className="substitute-line">
-                      대체 가능: {missing.flatMap((item) => recipe.substitutes[item] ?? []).slice(0, 3).join(", ") || "집에 있는 비슷한 재료"}
+                    <div className="substitute-panel">
+                      <div className="substitute-title">
+                        <Wand2 size={14} />
+                        대체 재료로 조정
+                      </div>
+                      {missing.map((item) => (
+                        <div className="substitute-row" key={item}>
+                          <span>{item}</span>
+                          <div>
+                            {(recipe.substitutes[item] ?? []).slice(0, 3).map((substitute) => (
+                              <button key={substitute} onClick={() => applySubstitute(recipe.id, item, substitute)}>
+                                {substitute}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {Object.keys(appliedSubstitutions).length > 0 && (
+                    <div className="applied-line">
+                      적용됨: {Object.entries(appliedSubstitutions).map(([from, to]) => `${from}→${to}`).join(", ")}
                     </div>
                   )}
                   <button

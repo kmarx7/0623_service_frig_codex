@@ -224,7 +224,9 @@ button:disabled {
 
 .chip-section,
 .priority-box,
-.detail-section {
+.detail-section,
+.recent-box,
+.shopping-box {
   display: grid;
   gap: 12px;
 }
@@ -236,6 +238,13 @@ button:disabled {
   color: #263225;
   font-size: 15px;
   font-weight: 800;
+}
+
+.section-title.with-icon,
+.recent-box strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .chip-grid {
@@ -359,6 +368,64 @@ button:disabled {
   background: #fbfcf5;
 }
 
+.recent-box,
+.shopping-box {
+  padding: 14px;
+  border: 1px solid #e2e8dc;
+  border-radius: 8px;
+  background: #fbfcf5;
+}
+
+.recent-box {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.recent-box p {
+  margin: 6px 0 0;
+  color: #687265;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.inline-action {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #cfdccd;
+  border-radius: 8px;
+  color: #244229;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.shopping-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shopping-item {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 11px;
+  border: 1px solid #e2c278;
+  border-radius: 999px;
+  color: #7b530c;
+  background: #fff7e4;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.shopping-item.checked {
+  border-color: #9fc69d;
+  color: #28613a;
+  background: #edf8e9;
+  text-decoration: line-through;
+}
+
 .notice {
   padding: 12px 13px;
   border: 1px solid #cfe0c8;
@@ -480,6 +547,59 @@ button:disabled {
   color: #8b5b0f;
   font-size: 13px;
   font-weight: 800;
+}
+
+.substitute-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff8e8;
+}
+
+.substitute-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #7b530c;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.substitute-row {
+  display: grid;
+  gap: 6px;
+}
+
+.substitute-row > span {
+  color: #5f4921;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.substitute-row div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.substitute-row button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #e0bf72;
+  border-radius: 999px;
+  color: #704b0c;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.applied-line {
+  margin-top: 9px;
+  color: #28613a;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .secondary-action {
@@ -666,8 +786,22 @@ button:disabled {
   }
 
   .chip,
-  .ingredient-pill {
+  .ingredient-pill,
+  .shopping-item {
     min-height: 38px;
+  }
+
+  .recent-box {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-action {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .substitute-row button {
+    min-height: 36px;
   }
 
   .primary-action {
