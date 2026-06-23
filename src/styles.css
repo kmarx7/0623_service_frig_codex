@@ -714,6 +714,30 @@ button:disabled {
   line-height: 1.4;
 }
 
+.voice-controls {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px;
+}
+
+.voice-button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #1f2d21;
+  background: #f6bd60;
+  font-weight: 900;
+}
+
+.voice-button.quiet {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .cook-controls {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
@@ -762,6 +786,7 @@ button:disabled {
   .primary-action,
   .secondary-action,
   .control-button,
+  .voice-button,
   .photo-action,
   .icon-button,
   .small-action {
@@ -798,6 +823,10 @@ button:disabled {
   .inline-action {
     width: 100%;
     min-height: 44px;
+  }
+
+  .voice-controls {
+    grid-template-columns: 1fr;
   }
 
   .substitute-row button {

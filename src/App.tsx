@@ -14,6 +14,8 @@ import {
   Sparkles,
   Timer,
   Utensils,
+  Volume2,
+  VolumeX,
   Wand2,
   X,
 } from "lucide-react";
@@ -198,6 +200,7 @@ export function App() {
   const [photoMode, setPhotoMode] = useState<PhotoMode>("camera");
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [isRecommending, setIsRecommending] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [notice, setNotice] = useState("");
   const [cookStep, setCookStep] = useState(0);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -318,6 +321,29 @@ export function App() {
 
   function toggleShoppingItem(item: string) {
     setCheckedShoppingItems((current) => (current.includes(item) ? current.filter((name) => name !== item) : [...current, item]));
+  }
+
+  function stopSpeaking() {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  }
+
+  function speakCookStep(stepIndex = cookStep) {
+    if (!("speechSynthesis" in window)) {
+      setNotice("이 브라우저는 음성 읽어주기를 지원하지 않아요.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(`${stepIndex + 1}단계. ${selectedRecipe.steps[stepIndex]}`);
+    utterance.lang = "ko-KR";
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
   }
 
   async function handleRecommend() {
@@ -627,6 +653,7 @@ export function App() {
             className="primary-action sticky-action"
             onClick={() => {
               setCookStep(0);
+              stopSpeaking();
               setStep("cook");
             }}
           >
@@ -638,7 +665,13 @@ export function App() {
 
       {step === "cook" && (
         <section className="cook-screen">
-          <button className="text-back light" onClick={() => setStep("recipe")}>
+          <button
+            className="text-back light"
+            onClick={() => {
+              stopSpeaking();
+              setStep("recipe");
+            }}
+          >
             <ArrowLeft size={17} /> 레시피로
           </button>
           <div className="cook-progress">
@@ -654,12 +687,29 @@ export function App() {
           <div className="cook-card">
             <p>{selectedRecipe.steps[cookStep]}</p>
           </div>
+          <div className="voice-controls">
+            <button className="voice-button" onClick={() => speakCookStep()}>
+              <Volume2 size={19} />
+              현재 단계 읽기
+            </button>
+            <button className="voice-button quiet" onClick={stopSpeaking} disabled={!isSpeaking}>
+              <VolumeX size={19} />
+              정지
+            </button>
+          </div>
           <div className="timer-strip">
             <Timer size={18} />
             타이머가 필요한 단계에서는 휴대폰 기본 타이머를 바로 켜두세요.
           </div>
           <div className="cook-controls">
-            <button className="control-button" disabled={cookStep === 0} onClick={() => setCookStep((current) => Math.max(0, current - 1))}>
+            <button
+              className="control-button"
+              disabled={cookStep === 0}
+              onClick={() => {
+                stopSpeaking();
+                setCookStep((current) => Math.max(0, current - 1));
+              }}
+            >
               <Minus size={20} />
               이전
             </button>
@@ -667,9 +717,11 @@ export function App() {
               className="control-button next"
               onClick={() => {
                 if (cookStep === selectedRecipe.steps.length - 1) {
+                  stopSpeaking();
                   setStep("recommendations");
                   return;
                 }
+                stopSpeaking();
                 setCookStep((current) => current + 1);
               }}
             >
