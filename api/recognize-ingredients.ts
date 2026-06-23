@@ -1,4 +1,4 @@
-import { getOpenAIClient } from "./openai";
+import { getOpenAIClient } from "./openai.js";
 
 const ingredientSchema = {
   type: "object",
